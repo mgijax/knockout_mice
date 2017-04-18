@@ -1,0 +1,173 @@
+#!/bin/sh
+
+# cannot execute as a symbolic link
+
+if [ -h $0 ]; then
+	echo "Cannot execute Install script as a symbolic link" >& 2
+	exit 1
+fi
+
+# make sure we are in the product's directory before continuing
+
+SCRIPT=`basename $0`
+DIR=`echo $0 | sed "s/${SCRIPT}$//"`
+if [ "${DIR}" != "" ]; then
+	cd ${DIR}
+fi
+
+# make sure we can access configuration file
+
+CONFIG=./Configuration
+
+if [ ! -r ${CONFIG} ]; then
+	echo "Missing ${DIR}${CONFIG} file" >& 2
+	exit 1
+fi
+
+# pick up values for standard variables
+
+TOP=`pwd`
+PYTHON_EXE=`grep '^PYTHON' ${CONFIG} | awk '{print $2}'`
+if [ ! -r ${PYTHON_EXE} ]; then
+	echo "Cannot read python at ${PYTHON_EXE}" >& 2
+	exit 1
+fi
+
+MGICONFIG=`grep '^MGICONFIG' ${CONFIG} | awk '{print $2}'`
+if [ ! -r ${MGICONFIG} ]; then
+	echo "Cannot find mgiconfig at ${MGICONFIG}" >& 2
+	exit 1
+fi
+
+KO_DATA_DIR=`grep '^KO_DATA_DIR' ${CONFIG} | awk '{print $2}'`
+if [ "${KO_DATA_DIR}" == "" ]; then
+	echo "Missing KO_DATA_DIR config value" >& 2
+	exit 1
+fi
+if [ ! -d ${KO_DATA_DIR} ]; then
+	echo "Cannot find data directory at ${KO_DATA_DIR}" >& 2
+	exit 1
+fi
+
+GROUP=`grep '^GROUP' ${CONFIG} | awk '{print $2}'`
+
+# pull needed info from mgiconfig
+
+. ${MGICONFIG}master.config.sh
+export PYTHONPATH
+export LD_LIBRARY_PATH
+
+# remove generated pieces of www directory
+
+for subdir in deltagen lexicon include
+do
+	if [ -d ./www/${subdir} ]; then
+		rm -rf ./www/${subdir}
+	fi
+done
+
+for symlink in data python
+do
+	if [ -h ./www/${symlink} ]; then
+		rm ./www/${symlink}
+	fi
+done
+
+if [ -r ./www/index.shtml ]; then
+	rm ./www/index.shtml
+fi
+
+echo "Cleaned ./www/ directory"
+
+# clean up script permissions
+
+chgrp ${GROUP} ./www/*cgi
+chmod 775 ./www/*cgi
+
+# remove any existing python executable links, create new ones
+
+if [ ! -d ./bin ]; then
+	mkdir ./bin
+fi
+
+if [ -h ./bin/python ]; then
+	rm ./bin/python
+fi
+
+cd bin 
+ln -s $PYTHON_EXE python
+cd ${TOP}
+
+echo "Created ./bin/python link"
+
+if [ -h ./admin/python ]; then
+	rm ./admin/python
+fi
+
+cd admin
+ln -s ../bin/python python
+cd ${TOP}
+
+echo "Created ./admin/python link"
+
+cd www
+ln -s ../bin/python python
+cd ${TOP}
+
+echo "Created ./www/python link"
+
+# remove any existing include directory, create and populate new one
+# with links to template files
+
+mkdir www/include
+cd www/include
+
+ln -s ${MGICONFIG}web/templateBodyStart.html templateBodyStart.html
+ln -s ${MGICONFIG}web/templateHeadNoReset.html templateHead.html
+ln -s ${MGICONFIG}web/templateBodyStop.html templateBodyStop.html
+
+echo "MGI" > title.html
+
+cd ${TOP}
+
+echo "Created ./www/include/ links"
+
+# create link to Deltagen/Lexicon data files from www directory
+
+# build main page
+
+cd admin
+./gen_kofiles
+
+echo "Created main page"
+
+cd ../www
+for subdir in deltagen lexicon
+do
+	mkdir ${subdir}
+	cd ${subdir}
+	ln -s ../include include
+	cd ..
+	chgrp ${GROUP} ${subdir}
+done
+
+echo "Created deltagen and lexicon directories"
+
+ln -s ${KO_DATA_DIR} data
+
+echo "Created data symlink"
+
+cd ${TOP}
+cp data/deltagenprotocols.pdf www/deltagen
+chgrp ${GROUP} www/deltagen/deltagenprotocols.pdf
+
+echo "Copied protocols file"
+
+cd admin
+./gen_deltagen_lex_mgifiles
+
+echo "Created pages to frame data files"
+
+# finish
+echo "All done" >& 2
+exit 0

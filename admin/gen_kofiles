@@ -1,0 +1,197 @@
+#! ./python
+
+# generates the summary page titled "Deltagen and Lexicon Knockout Mice"
+# Notes:
+#	0. This is an admittedly quick & dirty conversion from old code.
+#	1. This script reads from a front-end database, rather than a
+#		production-style one.
+
+import Configuration
+import mgi_html
+import pg_db
+import os
+
+# configuration data -- local config file + shared global config file
+
+localConfig = Configuration.Configuration('../Configuration')
+globalConfig = Configuration.Configuration(
+	os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
+
+# initialize and test database connection
+
+user = globalConfig['DB_USER']
+password = globalConfig['DB_PASSWORD']
+server = globalConfig['DB_SERVER']
+database = globalConfig['DB_DATABASE_FE']
+
+pg_db.set_sqlLogin(user, password, server, database)
+pg_db.useOneConnection(1)
+
+try:
+	results = pg_db.sql('''select value from database_info
+		where name = 'built from mgd database date' ''', 'auto')
+except:
+	raise Exception('Cannot read from %s..%s as user %s' % (
+		server, database, user))
+
+print 'Reading from %s..%s (dated %s) as %s' % (server, database, 
+	results[0]['value'].split()[0], user)
+
+# other global variables
+
+rowCount = 0
+destURL = 'http://%s/knockout_mice/' % globalConfig['PY_HOST']
+destPath = '../www/'
+
+indexQuery = '''select mm.symbol as marker_symbol, mm.name as marker_name,
+			aa.holder, aa.repository, aa.company_id, aa.jrs_id,
+			ml.chromosome, aa.symbol as allele_symbol,
+			mm.marker_key, aa.allele_key,
+			mm.primary_id as marker_id, aa.primary_id as allele_id
+		from marker mm, allele aa, marker_location ml,
+			marker_to_allele mta
+		where mm.marker_key = mta.marker_key
+			and mta.allele_key = aa.allele_key
+			and aa.holder is not null
+			and ml.marker_key = mm.marker_key
+			and ml.sequence_num = 1
+		order by mm.symbol'''
+
+fewiUrl = globalConfig['FEWI_URL']
+
+###--- functions ---###
+
+def getJaxURL(jrsID) :
+        return globalConfig['JAX_KO_URL'] % jrsID
+	
+def fewiLink (path, accID, label = None):
+	global fewiUrl
+
+        if fewiUrl[-1] != '/':
+                fewiUrl = fewiUrl + '/'
+        if path[-1] != '/':
+                path = path + '/'
+        if not label:
+                label = accID
+
+        return '<A HREF="%s%s%s">%s</A>' % (fewiUrl, path, accID, label)
+
+def markerDetail (accID, symbol = None):
+        return fewiLink ('marker/', accID, mgi_html.doSubSupTags(symbol))
+	
+def alleleDetail (accID, symbol = None):
+        return fewiLink ('allele/', accID, mgi_html.doSubSupTags(symbol))
+	
+def css():
+	return '''<style>
+#koTable {
+	border-collapse: collapse;
+	width: 100%
+}
+#koTable tr {
+	border: thin solid gray;
+	width: 100%
+}
+#koTable th {
+	padding: 4px;
+	border: thin solid gray;
+	border-spacing: 0px;
+	background-color: #D0E0F0;
+	font-weight: bold;
+	text-align: left;
+
+}
+#koTable td {
+	border: thin solid gray;
+	padding: 4px;
+	border-spacing: 0px;
+}
+.nowrap {
+	white-space: nowrap;
+}
+.gray {
+	background-color: #DDDDDD;
+}
+</style>
+'''
+
+def generateRow(markerID, markerSymbol, markerName, chromosome, alleleID,
+	alleleSymbol, holder, companyID, repository, jrsID):
+
+	global rowCount
+	rowCount = rowCount + 1
+
+	if (rowCount % 2) == 1:
+		stripe = ' class="gray"'
+	else:
+		stripe = ''
+
+	if repository == 'MMRRC':
+		repositoryURL = globalConfig['MMRRC_KO_URL'] % (
+			markerSymbol, holder)
+	else :
+		repositoryURL = getJaxURL(jrsID)
+
+	t = []
+	t.append('<tr%s>' % stripe)
+	t.append('<td>%s, %s</td>' % (markerDetail(markerID, markerSymbol),
+		mgi_html.doSubSupTags(markerName) ) )
+	t.append('<td>%s</td>' % chromosome)
+	t.append('<td class="nowrap">%s</td>' % (alleleDetail(alleleID, alleleSymbol)) )
+        t.append('<td><a href="%s%s/%s.html">Data Sheet</a></td>' % (destURL,
+		holder.lower(), companyID))
+        t.append('<td><a href="%s">%s</a></td>'% (repositoryURL, repository))
+	t.append('</tr>')
+
+	return '\n'.join(t)
+
+def generateSummary() :
+	s = [ '<!--#include file="include/templateHead.html"-->',
+		'<TITLE>MGI - Knockout Mice Summary</TITLE>', 
+		css(),
+		'<!--#include file="include/templateBodyStart.html"-->',
+		'<div id="titleBarWrapper">',
+		'<span class="titleBarMainTitle">',
+		'Deltagen and Lexicon Knockout Mice',
+		'</span>',
+		'</div>',
+		'''The NIH has recently announced an agreement that will allow
+		   the distribution of mutant mice and frozen embryos from two
+		   private collections of knockout mice. These stocks have been
+		   created and characterized by Deltagen Incorporated and
+		   Lexicon Genetics Incorporated.  A scientific review process
+		   was used to select targeted and gene trap mutations of
+		   interest from the larger set of Deltagen and Lexicon
+		   holdings. These stocks will be available without use
+		   restrictions for academic and not-for-profit institutions
+		   <br><br>''',
+		'<a href="https://www.genome.gov/17515708">More information regarding this initiative is available</a>.<br><br>',
+		'<table id="koTable"><tr>',
+		]
+
+	headers = ['Gene Symbol, Name', 'Chr', 'Allele Symbol',
+		'Phenotype Data', 'Repository']
+	
+	for header in headers:
+		s.append('<th>%s</th>' % header)
+
+	s.append('</tr>')
+
+	results = pg_db.sql(indexQuery, 'auto')
+	for row in results:
+		s.append(generateRow(row['marker_id'], row['marker_symbol'],
+			row['marker_name'], row['chromosome'],
+			row['allele_id'], row['allele_symbol'], row['holder'],
+			row['company_id'], row['repository'], row['jrs_id']) )
+
+	s.append('</table>')
+	s.append('<!--#include file="include/templateBodyStop.html"-->')
+	return '\n'.join(s)
+
+###--- main program ---###
+
+fd = open(os.path.join(destPath, 'index.shtml'), 'w')
+fd.write(generateSummary())
+fd.close()
+print 'Wrote rows for %d alleles' % rowCount
+print 'Done.'

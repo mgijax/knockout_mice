@@ -1,0 +1,191 @@
+#!./python
+
+# Purpose: Generate a directory of html files each for a Lexicon and a
+# DeltaGen dataset.  These pages will be accessed from MGI.
+#
+# Notes: This is a quick & dirty conversion from old code.
+
+import Configuration
+import os
+import pg_db
+
+###--- local config file + shared global config file ---###
+
+localConfig = Configuration.Configuration('../Configuration')
+globalConfig = Configuration.Configuration(
+	os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
+
+###--- initialize and test database connection ---###
+
+user = globalConfig['DB_USER']
+password = globalConfig['DB_PASSWORD']
+server = globalConfig['DB_SERVER']
+database = globalConfig['DB_DATABASE_FE']
+
+pg_db.set_sqlLogin(user, password, server, database)
+pg_db.useOneConnection(1)
+
+try:
+	results = pg_db.sql('''select value from database_info
+		where name = 'built from mgd database date' ''', 'auto')
+except:
+	raise Exception('Cannot read from %s..%s as user %s' % (
+		server, database, user))
+
+print 'Reading from %s..%s (dated %s) as %s' % (server, database,
+	results[0]['value'].split()[0], user)
+
+###--- other global variables ---###
+
+webshareUrl = globalConfig['WEBSHARE_URL']
+
+#  Location datafiles should be written to
+DATADESTINATION = "../www/"
+
+#  Location of the source Knockout files
+DATASOURCE = localConfig['KO_DATA_DIR']
+
+#  Location where the deltagen and lexicon data files live
+DELTAGENHOME    = "Deltagen/SummariesHtml"
+DELTAGENMOLBIO  = "Deltagen/MolBioHtml"
+LEXFILELIST = os.path.join(DATASOURCE, "Lexicon/LexiconFileList")
+
+#  URL for wi
+MGI_WI = 'http://%s/' % globalConfig['PY_HOST']
+
+# Dictionary for looking up a lexicon HTML file for a given company ID
+lexFiles = {}
+
+###--- functions ---###
+
+def buildLexiconLookup():
+    global lexFiles
+
+    # Open the Lexicon file list.
+    #
+    fd = open(LEXFILELIST, 'r')
+
+    # Add a new entry to the dictionary for each record in the Lexicon file
+    # list. The key to the dictionary is the company ID (field 1) and the
+    # value is the path to the corresponding HTML file (field 2).
+    #
+    for line in fd.readlines():
+        tokens = line[:-1].split('\t')
+        lexFiles[tokens[0]] = tokens[1]
+
+    fd.close()
+    return
+
+def makeFile(file, htmlstr):
+    fd = open(file, 'w')
+    fd.write(htmlstr)
+    fd.close()
+    return
+
+def ga():
+    # string with scripts to hit google analytics
+
+    return '''
+	<script type="text/javascript" src="%sjs/gamgi1.js"></script>
+	<script type="text/javascript" src="%sjs/gamgi2.js"></script>''' % (
+		webshareUrl, webshareUrl)
+
+def makeLexiconFile(companyId):
+
+    # discover source page
+    page = lexFiles[companyId];
+    srcFile = "../data/Lexicon/" + page
+
+    #  Create the name of the html file we're going to write
+    dfroot = DATADESTINATION + "lexicon/"
+    outFileName = dfroot + companyId + ".html"
+
+    dataset = "Lexicon"
+    
+    htmlstr = '\n'.join([
+        "<html><head><title> Deltagen/Lexicon Frame</title>%s</head>" % ga(),
+        "<frameset id=\"MGIHeaderFrame\" rows=\"185px,*\" border=0>",
+        "<frame id=\"MGIHeader\" name=\"MGIHeader\" SRC=\"",
+        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (MGI_WI,dataset,companyId),
+        "\">",
+        "<FRAME id=\"treeFrame\" NAME=\"treeFrame\" SRC=\"%s" % srcFile,
+        "\">",
+        "</FRAMESET></HTML>"])
+
+    makeFile(outFileName, htmlstr)
+    return
+
+def makeDeltagenSumFile(companyId):
+
+    # source page
+    srcFile = "../data/" + DELTAGENHOME + "/T" + companyId + "Summaries.html"
+
+    #  Create the name of the html file we're going to write
+    dfroot = DATADESTINATION + "deltagen/"
+    outFileName = dfroot + companyId + ".html"
+
+    dataset = "Deltagen"
+
+    htmlstr = '\n'.join([
+        "<html><head><title> Deltagen/Lexicon Frame</title>%s</head>" % ga(),
+        "<frameset id=\"MGIHeaderFrame\" rows=\"185px,*\" border=0>",
+        "<frame id=\"MGIHeader\" name=\"MGIHeader\" SRC=\"",
+        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (MGI_WI,dataset,companyId),
+        "\">",
+        "<FRAME id=\"treeFrame\" NAME=\"treeFrame\" SRC=\"%s" % srcFile,
+        "\">",
+        "</FRAMESET></HTML>"])
+
+    makeFile(outFileName, htmlstr)
+    return
+
+def makeDeltagenMolBioFile(companyId):
+
+    # source page
+    srcFile = "../data/" + DELTAGENMOLBIO + "/T" + companyId + "_MolBio.htm"
+
+    #  Create the name of the html file we're going to write
+    dfroot = DATADESTINATION + "deltagen/"
+    outFileName = dfroot + companyId + "_MolBio.html"
+
+    dataset = "DeltagenMolBio"
+
+    htmlstr = '\n'.join([
+        "<html><head><title> Deltagen/Lexicon Frame</title>%s</head>" % ga(),
+        "<frameset id=\"MGIHeaderFrame\" rows=\"210px,*\" border=0>",
+        "<frame id=\"MGIHeader\" name=\"MGIHeader\" SRC=\"",
+        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (MGI_WI,dataset,companyId),
+        "\">",
+        "<FRAME id=\"treeFrame\" NAME=\"treeFrame\" SRC=\"%s" % srcFile,
+        "\">",
+        "</FRAMESET></HTML>"])
+
+    makeFile(outFileName, htmlstr)
+    return
+
+def main():
+
+    buildLexiconLookup()
+        
+    #  generate html files for all Deltagen and Lexicon data
+    
+    cmd = '''select distinct company_id, holder
+    	from allele
+	where holder is not null
+	order by holder'''
+    results = pg_db.sql(cmd,'auto')
+    
+    for row in results:
+        companyId = row['company_id']
+        holder = row['holder']
+
+        if holder == 'Lexicon':
+                makeLexiconFile(companyId)
+        elif holder == 'Deltagen':
+                makeDeltagenSumFile(companyId)
+                makeDeltagenMolBioFile(companyId)
+
+    print 'Wrote files for %d alleles' % len(results)
+    print 'Done.'
+
+main()

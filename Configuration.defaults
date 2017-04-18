@@ -1,0 +1,11 @@
+# path to MGICONFIG
+MGICONFIG	/usr/local/mgi/live/mgiconfig/
+
+# path to python interpreter
+PYTHON		/usr/local/bin/python
+
+# unix group for apache-readable files
+GROUP		www
+
+# path to the raw Deltagen/Lexicon data files
+KO_DATA_DIR /usr/local/mgi/lexicon/
