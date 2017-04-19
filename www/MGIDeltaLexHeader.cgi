@@ -155,6 +155,7 @@ def genMGIHeader(dataset, companyID):
       '  <head>',
       '    <title>Deltagen and Lexicon Knockout Mice</title>',
       '    <LINK REL="stylesheet" HREF="%scss/mgi.css"> ' % webshare,
+      '    <style>a:link { text-decoration: none; }</style>',
       '  </head>',
       '  <body>',
       '  <div id="mgiFrameHeader"> ',
