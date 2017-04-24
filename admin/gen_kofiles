@@ -150,6 +150,7 @@ def generateSummary() :
 		'<TITLE>MGI - Knockout Mice Summary</TITLE>', 
 		css(),
 		'<!--#include file="include/templateBodyStart.html"-->',
+		'<style>a:link { text-decoration: none; }</style>',
 		'<div id="titleBarWrapper">',
 		'<span class="titleBarMainTitle">',
 		'Deltagen and Lexicon Knockout Mice',
@@ -165,7 +166,7 @@ def generateSummary() :
 		   holdings. These stocks will be available without use
 		   restrictions for academic and not-for-profit institutions
 		   <br><br>''',
-		'<a href="https://www.genome.gov/17515708">More information regarding this initiative is available</a>.<br><br>',
+		'<a href="https://www.genome.gov/17515708#al-4">More information regarding this initiative is available</a>.<br><br>',
 		'<table id="koTable"><tr>',
 		]
 
