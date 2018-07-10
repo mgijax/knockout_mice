@@ -86,8 +86,8 @@ def ga():
     # string with scripts to hit google analytics
 
     return '''
-	<script type="text/javascript" src="%sjs/gamgi1.js"></script>
-	<script type="text/javascript" src="%sjs/gamgi2.js"></script>''' % (
+	<script type="text/javascript" src="%sjs/mgi_ga.js"></script>
+	<script type="text/javascript" src="%sjs/autotrack.js"></script>''' % (
 		webshareUrl, webshareUrl)
 
 def makeLexiconFile(companyId):
