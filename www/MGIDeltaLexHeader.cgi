@@ -16,6 +16,7 @@ import pg_db
 import mgi_html
 import cgi
 import os
+import re
 
 ###--- local config file + shared global config file ---###
 
@@ -74,6 +75,8 @@ def genMGIHeader(dataset, companyID):
     alleleDetailLink    = ""
     infoCell            = "&nbsp;"
     molBioLoc           = kmUrl + "deltagen/"
+    dataDisplayType	= ""
+    holderDisplayName	= ""
     
     # set dataset-specific values
     if dataset == "Deltagen":
@@ -205,6 +208,22 @@ def genMGIHeader(dataset, companyID):
 
     return page
         
+def validateParameters(dataset, companyID):
+	# ensure that the submitted parameters are valid and not problematic
+	# (as far as preventing SQL injection and XSS attacks)
+
+	# There are only three valid values for dataset - must be one of 'em.
+    
+	if dataset not in [ "Deltagen", "DeltagenMolBio", "Lexicon" ]:
+		raise Exception('Invalid dataset parameter')
+
+	# The companyID must be an integer number between 10 and 9999.
+ 
+	p = re.compile('^[0-9]{2,4}$')
+	match = p.match(companyID)
+	if not match:
+		raise Exception('Invalid companyID parameter')
+	return
 
 ###--- main logic ---###
 
@@ -227,6 +246,7 @@ def main():
         #  Throw exception with "no project id/company id passed in" message
         pass
 
+    validateParameters(dataset, companyID)
     initializeDatabaseConnection()
     page = genMGIHeader(dataset, companyID)
     print page
