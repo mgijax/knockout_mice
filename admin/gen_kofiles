@@ -2,9 +2,13 @@
 
 # generates the summary page titled "Deltagen and Lexicon Knockout Mice"
 # Notes:
-#	0. This is an admittedly quick & dirty conversion from old code.
-#	1. This script reads from a front-end database, rather than a
-#		production-style one.
+#       0. This is an admittedly quick & dirty conversion from old code.
+#       1. This script reads from a front-end database, rather than a
+#               production-style one.
+
+import sys
+if '/usr/local/mgi/live/lib/python' not in sys.path:
+        sys.path.insert(0, '/usr/local/mgi/live/lib/python')
 
 import Configuration
 import mgi_html
@@ -15,7 +19,7 @@ import os
 
 localConfig = Configuration.Configuration('../Configuration')
 globalConfig = Configuration.Configuration(
-	os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
+        os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
 
 # initialize and test database connection
 
@@ -28,14 +32,14 @@ pg_db.set_sqlLogin(user, password, server, database)
 pg_db.useOneConnection(1)
 
 try:
-	results = pg_db.sql('''select value from database_info
-		where name = 'built from mgd database date' ''', 'auto')
+        results = pg_db.sql('''select value from database_info
+                where name = 'built from mgd database date' ''', 'auto')
 except:
-	raise Exception('Cannot read from %s..%s as user %s' % (
-		server, database, user))
+        raise Exception('Cannot read from %s..%s as user %s' % (
+                server, database, user))
 
-print 'Reading from %s..%s (dated %s) as %s' % (server, database, 
-	results[0]['value'].split()[0], user)
+print('Reading from %s..%s (dated %s) as %s' % (server, database, 
+        results[0]['value'].split()[0], user))
 
 # other global variables
 
@@ -44,201 +48,201 @@ destURL = 'http://%s/knockout_mice/' % globalConfig['PY_HOST']
 destPath = '../www/'
 
 indexQuery = '''select mm.symbol as marker_symbol, mm.name as marker_name,
-			aa.holder, aa.repository, aa.company_id, aa.jrs_id,
-			ml.chromosome, aa.symbol as allele_symbol,
-			mm.marker_key, aa.allele_key,
-			mm.primary_id as marker_id, aa.primary_id as allele_id
-		from marker mm, allele aa, marker_location ml,
-			marker_to_allele mta
-		where mm.marker_key = mta.marker_key
-			and mta.allele_key = aa.allele_key
-			and aa.holder is not null
-			and ml.marker_key = mm.marker_key
-			and ml.sequence_num = 1
-		order by mm.symbol'''
+                        aa.holder, aa.repository, aa.company_id, aa.jrs_id,
+                        ml.chromosome, aa.symbol as allele_symbol,
+                        mm.marker_key, aa.allele_key,
+                        mm.primary_id as marker_id, aa.primary_id as allele_id
+                from marker mm, allele aa, marker_location ml,
+                        marker_to_allele mta
+                where mm.marker_key = mta.marker_key
+                        and mta.allele_key = aa.allele_key
+                        and aa.holder is not null
+                        and ml.marker_key = mm.marker_key
+                        and ml.sequence_num = 1
+                order by mm.symbol'''
 
 fewiUrl = globalConfig['FEWI_URL']
 
 # maps from selected allele IDs to their MMRRC stock IDs (for linking to MMRRC)
 mmrrcIDs = {
-	'MGI:3528936' : '11650',
-	'MGI:3529190' : '11700',
-	'MGI:3528832' : '11732',
-	'MGI:3528975' : '11663',
-	'MGI:3528911' : '11748',
-	'MGI:3604392' : '11707',
-	'MGI:3604391' : '11705',
-	'MGI:3530844' : '11675',
-	'MGI:3528811' : '11728',
-	'MGI:3529240' : '11701',
-	'MGI:3528585' : '11702',
-	'MGI:3528817' : '11729',
-	'MGI:3529082' : '11668',
-	'MGI:3529339' : '11666',
-	'MGI:3529095' : '11669',
-	'MGI:3604401' : '11737',
-	'MGI:3530073' : '11670',
-	'MGI:3604528' : '11673',
-	'MGI:3529233' : '11647',
-	'MGI:3604411' : '11672',
-	'MGI:3604412' : '11677',
-	'MGI:3528990' : '11674',
-	'MGI:3528994' : '11723',
-	'MGI:3529784' : '11679',
-	'MGI:3529464' : '11646',
-	'MGI:3530090' : '11645',
-	'MGI:3529779' : '11676',
-	'MGI:3604525' : '11671',
-	'MGI:3604447' : '11678',
-	'MGI:3530906' : '11680',
-	'MGI:3528995' : '11724',
-	'MGI:3604519' : '11598',
-	'MGI:3604517' : '11599',
-	'MGI:3604456' : '11600',
-	'MGI:3604516' : '11601',
-	'MGI:3604457' : '11602',
-	'MGI:3604458' : '11603',
-	'MGI:3604460' : '11604',
-	'MGI:3604461' : '11605',
-	'MGI:3604463' : '11606',
-	'MGI:3604512' : '11607',
-	'MGI:3604513' : '11608',
-	'MGI:3604511' : '11609',
-	'MGI:3604507' : '11610',
-	'MGI:3604503' : '11611',
-	'MGI:3604505' : '11612',
-	'MGI:3604509' : '11613',
-	'MGI:3604504' : '11614',
-	'MGI:3604501' : '11615',
-	'MGI:3604496' : '11616',
-	'MGI:3604499' : '11617',
-	'MGI:3604497' : '11618',
-	'MGI:3604487' : '11619',
-	'MGI:3604492' : '11620',
-	'MGI:3604491' : '11621',
-	'MGI:3604494' : '11622',
-	'MGI:3604483' : '11623',
-	'MGI:3604486' : '11624',
-	'MGI:3604485' : '11625',
-	'MGI:3604484' : '11626',
-	'MGI:3604523' : '11627',
-	'MGI:3604521' : '11628',
-	'MGI:3604469' : '11629',
-	'MGI:3604480' : '11630',
-	'MGI:3604479' : '11631',
-	'MGI:3604478' : '11632',
-	'MGI:3604473' : '11633',
-	'MGI:3604471' : '11634',
-	'MGI:3604470' : '11635',
-	'MGI:3604466' : '11636',
-	'MGI:3604467' : '11637',
-	'MGI:3604468' : '11638',
-	'MGI:3604465' : '11639',
-	'MGI:3604464' : '11640',
-	'MGI:3604453' : '11641',
-	'MGI:3604452' : '11642',
-	'MGI:3604515' : '11643',
-	'MGI:3529138' : '11644',
-	'MGI:3529296' : '11648',
-	'MGI:3529694' : '11649',
-	'MGI:3529990' : '11651',
-	'MGI:3530289' : '11652',
-	'MGI:3528953' : '11653',
-	'MGI:3528963' : '11654',
-	'MGI:3528964' : '11655',
-	'MGI:3530246' : '11656',
-	'MGI:3604410' : '11657',
-	'MGI:3530817' : '11658',
-	'MGI:3529121' : '11659',
-	'MGI:3604522' : '11660',
-	'MGI:3529998' : '11661',
-	'MGI:3530285' : '11662',
-	'MGI:3529767' : '11664',
-	'MGI:3529322' : '11665',
-	'MGI:3529818' : '11667',
-	'MGI:3528440' : '11681',
-	'MGI:3529525' : '11682',
-	'MGI:3529131' : '11683',
-	'MGI:3529976' : '11684',
-	'MGI:3530146' : '11685',
-	'MGI:3529527' : '11686',
-	'MGI:3530009' : '11687',
-	'MGI:3529157' : '11688',
-	'MGI:3530062' : '11689',
-	'MGI:3530222' : '11690',
-	'MGI:3529169' : '11691',
-	'MGI:3529175' : '11692',
-	'MGI:3530288' : '11693',
-	'MGI:3528568' : '11694',
-	'MGI:3604381' : '11695',
-	'MGI:3529438' : '11696',
-	'MGI:3604472' : '11697',
-	'MGI:3604387' : '11698',
-	'MGI:3528880' : '11699',
-	'MGI:3530477' : '11703',
-	'MGI:3530476' : '11704',
-	'MGI:3529969' : '11706',
-	'MGI:3529252' : '11708',
-	'MGI:3528734' : '11709',
-	'MGI:3604388' : '11710',
-	'MGI:3604389' : '11711',
-	'MGI:3530486' : '11712',
-	'MGI:3530889' : '11713',
-	'MGI:3529566' : '11714',
-	'MGI:3528762' : '11715',
-	'MGI:3528763' : '11716',
-	'MGI:3528439' : '11717',
-	'MGI:3529298' : '11718',
-	'MGI:3530576' : '11719',
-	'MGI:3043746' : '11720',
-	'MGI:3529585' : '11721',
-	'MGI:3530572' : '11722',
-	'MGI:3604398' : '11725',
-	'MGI:3604399' : '11726',
-	'MGI:3604476' : '11727',
-	'MGI:3528858' : '11730',
-	'MGI:3604400' : '11731',
-	'MGI:3528495' : '11733',
-	'MGI:3530228' : '11734',
-	'MGI:3604482' : '11735',
-	'MGI:3529350' : '11736',
-	'MGI:3529241' : '11738',
-	'MGI:3604489' : '11739',
-	'MGI:3529671' : '11740',
-	'MGI:3529819' : '11741',
-	'MGI:3529811' : '11742',
-	'MGI:3530042' : '11743',
-	'MGI:3529824' : '11744',
-	'MGI:3604407' : '11745',
-	'MGI:3530094' : '11746',
-	'MGI:3604493' : '11747',
-	'MGI:3604408' : '11749',
-	'MGI:3529055' : '11750',
-	'MGI:3530825' : '11751',
-	'MGI:3530735' : '11752',
-	'MGI:3529854' : '11753',
-	'MGI:3604500' : '11754',
-	'MGI:3530101' : '11755',
-	'MGI:3530752' : '11756',
-	'MGI:3530910' : '11757',
-	'MGI:3604508' : '11758',
-	'MGI:3530126' : '11759',
-	'MGI:3531188' : '11760',
-	'MGI:3530140' : '11761',
-	'MGI:3529036' : '11762',
-	'MGI:3529167' : '11763',
-	'MGI:3604377' : '11764',
-	'MGI:3529186' : '15889',
-	'MGI:3528724' : '30008',
+        'MGI:3528936' : '11650',
+        'MGI:3529190' : '11700',
+        'MGI:3528832' : '11732',
+        'MGI:3528975' : '11663',
+        'MGI:3528911' : '11748',
+        'MGI:3604392' : '11707',
+        'MGI:3604391' : '11705',
+        'MGI:3530844' : '11675',
+        'MGI:3528811' : '11728',
+        'MGI:3529240' : '11701',
+        'MGI:3528585' : '11702',
+        'MGI:3528817' : '11729',
+        'MGI:3529082' : '11668',
+        'MGI:3529339' : '11666',
+        'MGI:3529095' : '11669',
+        'MGI:3604401' : '11737',
+        'MGI:3530073' : '11670',
+        'MGI:3604528' : '11673',
+        'MGI:3529233' : '11647',
+        'MGI:3604411' : '11672',
+        'MGI:3604412' : '11677',
+        'MGI:3528990' : '11674',
+        'MGI:3528994' : '11723',
+        'MGI:3529784' : '11679',
+        'MGI:3529464' : '11646',
+        'MGI:3530090' : '11645',
+        'MGI:3529779' : '11676',
+        'MGI:3604525' : '11671',
+        'MGI:3604447' : '11678',
+        'MGI:3530906' : '11680',
+        'MGI:3528995' : '11724',
+        'MGI:3604519' : '11598',
+        'MGI:3604517' : '11599',
+        'MGI:3604456' : '11600',
+        'MGI:3604516' : '11601',
+        'MGI:3604457' : '11602',
+        'MGI:3604458' : '11603',
+        'MGI:3604460' : '11604',
+        'MGI:3604461' : '11605',
+        'MGI:3604463' : '11606',
+        'MGI:3604512' : '11607',
+        'MGI:3604513' : '11608',
+        'MGI:3604511' : '11609',
+        'MGI:3604507' : '11610',
+        'MGI:3604503' : '11611',
+        'MGI:3604505' : '11612',
+        'MGI:3604509' : '11613',
+        'MGI:3604504' : '11614',
+        'MGI:3604501' : '11615',
+        'MGI:3604496' : '11616',
+        'MGI:3604499' : '11617',
+        'MGI:3604497' : '11618',
+        'MGI:3604487' : '11619',
+        'MGI:3604492' : '11620',
+        'MGI:3604491' : '11621',
+        'MGI:3604494' : '11622',
+        'MGI:3604483' : '11623',
+        'MGI:3604486' : '11624',
+        'MGI:3604485' : '11625',
+        'MGI:3604484' : '11626',
+        'MGI:3604523' : '11627',
+        'MGI:3604521' : '11628',
+        'MGI:3604469' : '11629',
+        'MGI:3604480' : '11630',
+        'MGI:3604479' : '11631',
+        'MGI:3604478' : '11632',
+        'MGI:3604473' : '11633',
+        'MGI:3604471' : '11634',
+        'MGI:3604470' : '11635',
+        'MGI:3604466' : '11636',
+        'MGI:3604467' : '11637',
+        'MGI:3604468' : '11638',
+        'MGI:3604465' : '11639',
+        'MGI:3604464' : '11640',
+        'MGI:3604453' : '11641',
+        'MGI:3604452' : '11642',
+        'MGI:3604515' : '11643',
+        'MGI:3529138' : '11644',
+        'MGI:3529296' : '11648',
+        'MGI:3529694' : '11649',
+        'MGI:3529990' : '11651',
+        'MGI:3530289' : '11652',
+        'MGI:3528953' : '11653',
+        'MGI:3528963' : '11654',
+        'MGI:3528964' : '11655',
+        'MGI:3530246' : '11656',
+        'MGI:3604410' : '11657',
+        'MGI:3530817' : '11658',
+        'MGI:3529121' : '11659',
+        'MGI:3604522' : '11660',
+        'MGI:3529998' : '11661',
+        'MGI:3530285' : '11662',
+        'MGI:3529767' : '11664',
+        'MGI:3529322' : '11665',
+        'MGI:3529818' : '11667',
+        'MGI:3528440' : '11681',
+        'MGI:3529525' : '11682',
+        'MGI:3529131' : '11683',
+        'MGI:3529976' : '11684',
+        'MGI:3530146' : '11685',
+        'MGI:3529527' : '11686',
+        'MGI:3530009' : '11687',
+        'MGI:3529157' : '11688',
+        'MGI:3530062' : '11689',
+        'MGI:3530222' : '11690',
+        'MGI:3529169' : '11691',
+        'MGI:3529175' : '11692',
+        'MGI:3530288' : '11693',
+        'MGI:3528568' : '11694',
+        'MGI:3604381' : '11695',
+        'MGI:3529438' : '11696',
+        'MGI:3604472' : '11697',
+        'MGI:3604387' : '11698',
+        'MGI:3528880' : '11699',
+        'MGI:3530477' : '11703',
+        'MGI:3530476' : '11704',
+        'MGI:3529969' : '11706',
+        'MGI:3529252' : '11708',
+        'MGI:3528734' : '11709',
+        'MGI:3604388' : '11710',
+        'MGI:3604389' : '11711',
+        'MGI:3530486' : '11712',
+        'MGI:3530889' : '11713',
+        'MGI:3529566' : '11714',
+        'MGI:3528762' : '11715',
+        'MGI:3528763' : '11716',
+        'MGI:3528439' : '11717',
+        'MGI:3529298' : '11718',
+        'MGI:3530576' : '11719',
+        'MGI:3043746' : '11720',
+        'MGI:3529585' : '11721',
+        'MGI:3530572' : '11722',
+        'MGI:3604398' : '11725',
+        'MGI:3604399' : '11726',
+        'MGI:3604476' : '11727',
+        'MGI:3528858' : '11730',
+        'MGI:3604400' : '11731',
+        'MGI:3528495' : '11733',
+        'MGI:3530228' : '11734',
+        'MGI:3604482' : '11735',
+        'MGI:3529350' : '11736',
+        'MGI:3529241' : '11738',
+        'MGI:3604489' : '11739',
+        'MGI:3529671' : '11740',
+        'MGI:3529819' : '11741',
+        'MGI:3529811' : '11742',
+        'MGI:3530042' : '11743',
+        'MGI:3529824' : '11744',
+        'MGI:3604407' : '11745',
+        'MGI:3530094' : '11746',
+        'MGI:3604493' : '11747',
+        'MGI:3604408' : '11749',
+        'MGI:3529055' : '11750',
+        'MGI:3530825' : '11751',
+        'MGI:3530735' : '11752',
+        'MGI:3529854' : '11753',
+        'MGI:3604500' : '11754',
+        'MGI:3530101' : '11755',
+        'MGI:3530752' : '11756',
+        'MGI:3530910' : '11757',
+        'MGI:3604508' : '11758',
+        'MGI:3530126' : '11759',
+        'MGI:3531188' : '11760',
+        'MGI:3530140' : '11761',
+        'MGI:3529036' : '11762',
+        'MGI:3529167' : '11763',
+        'MGI:3604377' : '11764',
+        'MGI:3529186' : '15889',
+        'MGI:3528724' : '30008',
 }
 
 ###--- functions ---###
 
 def getJaxURL(jrsID) :
         return globalConfig['JAX_KO_URL'] % jrsID
-	
+        
 def fewiLink (path, accID, label = None):
-	global fewiUrl
+        global fewiUrl
 
         if fewiUrl[-1] != '/':
                 fewiUrl = fewiUrl + '/'
@@ -251,127 +255,127 @@ def fewiLink (path, accID, label = None):
 
 def markerDetail (accID, symbol = None):
         return fewiLink ('marker/', accID, mgi_html.doSubSupTags(symbol))
-	
+        
 def alleleDetail (accID, symbol = None):
         return fewiLink ('allele/', accID, mgi_html.doSubSupTags(symbol))
-	
+        
 def css():
-	return '''<style>
+        return '''<style>
 #koTable {
-	border-collapse: collapse;
-	width: 100%
+        border-collapse: collapse;
+        width: 100%
 }
 #koTable tr {
-	border: thin solid gray;
-	width: 100%
+        border: thin solid gray;
+        width: 100%
 }
 #koTable th {
-	padding: 4px;
-	border: thin solid gray;
-	border-spacing: 0px;
-	background-color: #D0E0F0;
-	font-weight: bold;
-	text-align: left;
+        padding: 4px;
+        border: thin solid gray;
+        border-spacing: 0px;
+        background-color: #D0E0F0;
+        font-weight: bold;
+        text-align: left;
 
 }
 #koTable td {
-	border: thin solid gray;
-	padding: 4px;
-	border-spacing: 0px;
+        border: thin solid gray;
+        padding: 4px;
+        border-spacing: 0px;
 }
 .nowrap {
-	white-space: nowrap;
+        white-space: nowrap;
 }
 .gray {
-	background-color: #DDDDDD;
+        background-color: #DDDDDD;
 }
 </style>
 '''
 
 def getMMRRCUrl(markerSymbol, holder, alleleID):
-	# if this is a specially flagged alleleID, then we need to use the MMRRC stock number;
-	# if not, just use the traditional URL
-	
-	if alleleID in mmrrcIDs:
-		return localConfig['MMRRC_URL'] % mmrrcIDs[alleleID]
-	return globalConfig['MMRRC_KO_URL'] % (markerSymbol, holder)
+        # if this is a specially flagged alleleID, then we need to use the MMRRC stock number;
+        # if not, just use the traditional URL
+        
+        if alleleID in mmrrcIDs:
+                return localConfig['MMRRC_URL'] % mmrrcIDs[alleleID]
+        return globalConfig['MMRRC_KO_URL'] % (markerSymbol, holder)
 
 def generateRow(markerID, markerSymbol, markerName, chromosome, alleleID,
-	alleleSymbol, holder, companyID, repository, jrsID):
+        alleleSymbol, holder, companyID, repository, jrsID):
 
-	global rowCount
-	rowCount = rowCount + 1
+        global rowCount
+        rowCount = rowCount + 1
 
-	if (rowCount % 2) == 1:
-		stripe = ' class="gray"'
-	else:
-		stripe = ''
+        if (rowCount % 2) == 1:
+                stripe = ' class="gray"'
+        else:
+                stripe = ''
 
-	if repository == 'MMRRC':
-		repositoryURL = getMMRRCUrl(markerSymbol, holder, alleleID)
-	else :
-		repositoryURL = getJaxURL(jrsID)
+        if repository == 'MMRRC':
+                repositoryURL = getMMRRCUrl(markerSymbol, holder, alleleID)
+        else :
+                repositoryURL = getJaxURL(jrsID)
 
-	t = []
-	t.append('<tr%s>' % stripe)
-	t.append('<td>%s, %s</td>' % (markerDetail(markerID, markerSymbol),
-		mgi_html.doSubSupTags(markerName) ) )
-	t.append('<td>%s</td>' % chromosome)
-	t.append('<td class="nowrap">%s</td>' % (alleleDetail(alleleID, alleleSymbol)) )
+        t = []
+        t.append('<tr%s>' % stripe)
+        t.append('<td>%s, %s</td>' % (markerDetail(markerID, markerSymbol),
+                mgi_html.doSubSupTags(markerName) ) )
+        t.append('<td>%s</td>' % chromosome)
+        t.append('<td class="nowrap">%s</td>' % (alleleDetail(alleleID, alleleSymbol)) )
         t.append('<td><a href="%s%s/%s.html">Data Sheet</a></td>' % (destURL,
-		holder.lower(), companyID))
+                holder.lower(), companyID))
         t.append('<td><a href="%s">%s</a></td>'% (repositoryURL, repository))
-	t.append('</tr>')
+        t.append('</tr>')
 
-	return '\n'.join(t)
+        return '\n'.join(t)
 
 def generateSummary() :
-	s = [ '<!--#include file="include/templateHead.html"-->',
-		'<TITLE>MGI - Knockout Mice Summary</TITLE>', 
-		css(),
-		'<!--#include file="include/templateBodyStart.html"-->',
-		'<style>a:link { text-decoration: none; }</style>',
-		'<div id="titleBarWrapper">',
-		'<span class="titleBarMainTitle">',
-		'Deltagen and Lexicon Knockout Mice',
-		'</span>',
-		'</div>',
-		'''The NIH has recently announced an agreement that will allow
-		   the distribution of mutant mice and frozen embryos from two
-		   private collections of knockout mice. These stocks have been
-		   created and characterized by Deltagen Incorporated and
-		   Lexicon Genetics Incorporated.  A scientific review process
-		   was used to select targeted and gene trap mutations of
-		   interest from the larger set of Deltagen and Lexicon
-		   holdings. These stocks will be available without use
-		   restrictions for academic and not-for-profit institutions
-		   <br><br>''',
-		'<table id="koTable"><tr>',
-		]
+        s = [ '<!--#include file="include/templateHead.html"-->',
+                '<TITLE>MGI - Knockout Mice Summary</TITLE>', 
+                css(),
+                '<!--#include file="include/templateBodyStart.html"-->',
+                '<style>a:link { text-decoration: none; }</style>',
+                '<div id="titleBarWrapper">',
+                '<span class="titleBarMainTitle">',
+                'Deltagen and Lexicon Knockout Mice',
+                '</span>',
+                '</div>',
+                '''The NIH has recently announced an agreement that will allow
+                   the distribution of mutant mice and frozen embryos from two
+                   private collections of knockout mice. These stocks have been
+                   created and characterized by Deltagen Incorporated and
+                   Lexicon Genetics Incorporated.  A scientific review process
+                   was used to select targeted and gene trap mutations of
+                   interest from the larger set of Deltagen and Lexicon
+                   holdings. These stocks will be available without use
+                   restrictions for academic and not-for-profit institutions
+                   <br><br>''',
+                '<table id="koTable"><tr>',
+                ]
 
-	headers = ['Gene Symbol, Name', 'Chr', 'Allele Symbol',
-		'Phenotype Data', 'Repository']
-	
-	for header in headers:
-		s.append('<th>%s</th>' % header)
+        headers = ['Gene Symbol, Name', 'Chr', 'Allele Symbol',
+                'Phenotype Data', 'Repository']
+        
+        for header in headers:
+                s.append('<th>%s</th>' % header)
 
-	s.append('</tr>')
+        s.append('</tr>')
 
-	results = pg_db.sql(indexQuery, 'auto')
-	for row in results:
-		s.append(generateRow(row['marker_id'], row['marker_symbol'],
-			row['marker_name'], row['chromosome'],
-			row['allele_id'], row['allele_symbol'], row['holder'],
-			row['company_id'], row['repository'], row['jrs_id']) )
+        results = pg_db.sql(indexQuery, 'auto')
+        for row in results:
+                s.append(generateRow(row['marker_id'], row['marker_symbol'],
+                        row['marker_name'], row['chromosome'],
+                        row['allele_id'], row['allele_symbol'], row['holder'],
+                        row['company_id'], row['repository'], row['jrs_id']) )
 
-	s.append('</table>')
-	s.append('<!--#include file="include/templateBodyStop.html"-->')
-	return '\n'.join(s)
+        s.append('</table>')
+        s.append('<!--#include file="include/templateBodyStop.html"-->')
+        return '\n'.join(s)
 
 ###--- main program ---###
 
 fd = open(os.path.join(destPath, 'index.shtml'), 'w')
 fd.write(generateSummary())
 fd.close()
-print 'Wrote rows for %d alleles' % rowCount
-print 'Done.'
+print('Wrote rows for %d alleles' % rowCount)
+print('Done.')

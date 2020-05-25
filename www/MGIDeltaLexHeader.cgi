@@ -4,12 +4,12 @@
 # DeltaGen detail page.
 #
 # Notes: admittedly quick and dirty conversion from python WI to new
-#	knockout_mice product and to hit front-end database rather than 
-#	production-style database.
+#       knockout_mice product and to hit front-end database rather than 
+#       production-style database.
 
 import sys
 if '/usr/local/mgi/live/lib/python' not in sys.path:
-	sys.path.insert(0, '/usr/local/mgi/live/lib/python')
+        sys.path.insert(0, '/usr/local/mgi/live/lib/python')
 
 import Configuration
 import pg_db
@@ -22,7 +22,7 @@ import re
 
 localConfig = Configuration.Configuration('../Configuration')
 globalConfig = Configuration.Configuration(
-	os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
+        os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
 
 ###--- functions ---###
 
@@ -36,11 +36,11 @@ def initializeDatabaseConnection():
     pg_db.useOneConnection(1)
 
     try:
-	results = pg_db.sql('''select value from database_info
-		where name = 'built from mgd database date' ''', 'auto')
+        results = pg_db.sql('''select value from database_info
+                where name = 'built from mgd database date' ''', 'auto')
     except:
-	raise Exception('Cannot read from %s..%s as user %s' % (
-		server, database, user))
+        raise Exception('Cannot read from %s..%s as user %s' % (
+                server, database, user))
     return
 
 def genMGIHeader(dataset, companyID):
@@ -75,8 +75,8 @@ def genMGIHeader(dataset, companyID):
     alleleDetailLink    = ""
     infoCell            = "&nbsp;"
     molBioLoc           = kmUrl + "deltagen/"
-    dataDisplayType	= ""
-    holderDisplayName	= ""
+    dataDisplayType     = ""
+    holderDisplayName   = ""
     
     # set dataset-specific values
     if dataset == "Deltagen":
@@ -102,17 +102,17 @@ def genMGIHeader(dataset, companyID):
     # get data from the DB (assumes only one match, takes the first one)
 
     cmd = '''select mm.symbol as genesymbol, mm.name as genename, mm.marker_key,
-    		aa.symbol as allelesymbol, aa.allele_key as allelekey,
-		mm.primary_id as geneid, aa.primary_id as alleleid
-	from marker mm, allele aa, marker_location ml, marker_to_allele mta
-	where mm.marker_key = mta.marker_key
-		and mta.allele_key = aa.allele_key
-		and aa.company_id = '%s'
-		and aa.holder = '%s'
-		and ml.marker_key = mm.marker_key
-		and ml.sequence_num = 1
-	order by mm.symbol
-	limit 1''' % (companyID, holder)
+                aa.symbol as allelesymbol, aa.allele_key as allelekey,
+                mm.primary_id as geneid, aa.primary_id as alleleid
+        from marker mm, allele aa, marker_location ml, marker_to_allele mta
+        where mm.marker_key = mta.marker_key
+                and mta.allele_key = aa.allele_key
+                and aa.company_id = '%s'
+                and aa.holder = '%s'
+                and ml.marker_key = mm.marker_key
+                and ml.sequence_num = 1
+        order by mm.symbol
+        limit 1''' % (companyID, holder)
 
     results = pg_db.sql(cmd,'auto')
 
@@ -209,21 +209,21 @@ def genMGIHeader(dataset, companyID):
     return page
         
 def validateParameters(dataset, companyID):
-	# ensure that the submitted parameters are valid and not problematic
-	# (as far as preventing SQL injection and XSS attacks)
+        # ensure that the submitted parameters are valid and not problematic
+        # (as far as preventing SQL injection and XSS attacks)
 
-	# There are only three valid values for dataset - must be one of 'em.
+        # There are only three valid values for dataset - must be one of 'em.
     
-	if dataset not in [ "Deltagen", "DeltagenMolBio", "Lexicon" ]:
-		raise Exception('Invalid dataset parameter')
+        if dataset not in [ "Deltagen", "DeltagenMolBio", "Lexicon" ]:
+                raise Exception('Invalid dataset parameter')
 
-	# The companyID must be an integer number between 10 and 9999.
+        # The companyID must be an integer number between 10 and 9999.
  
-	p = re.compile('^[0-9]{2,4}$')
-	match = p.match(companyID)
-	if not match:
-		raise Exception('Invalid companyID parameter')
-	return
+        p = re.compile('^[0-9]{2,4}$')
+        match = p.match(companyID)
+        if not match:
+                raise Exception('Invalid companyID parameter')
+        return
 
 ###--- main logic ---###
 
@@ -234,13 +234,13 @@ def main():
     dataset = 'Lexicon'
     companyID = ''
 
-    if input.has_key('dataset'):
+    if 'dataset' in input:
         dataset = input['dataset'].value
     else:
         #  Exception: no dataset
         pass
         
-    if input.has_key('companyID'):
+    if 'companyID' in input:
         companyID = input['companyID'].value
     else:
         #  Throw exception with "no project id/company id passed in" message
@@ -249,20 +249,20 @@ def main():
     validateParameters(dataset, companyID)
     initializeDatabaseConnection()
     page = genMGIHeader(dataset, companyID)
-    print page
+    print(page)
 
 
 ###---  CGI Entry point ---###
 
-print 'Content-type: text/html'
-print
+print('Content-type: text/html')
+print()
 try:
     main()
 except:
-    print '''<html><head><title>MGI - Error</title></head>
-    	<body>
-	An error occurred when generating the header for this page:<br/>
-	<blockquote>
-	<i>%s</i> : %s
-	</blockquote>
-	</body></html>''' % sys.exc_info()[0:2]
+    print('''<html><head><title>MGI - Error</title></head>
+        <body>
+        An error occurred when generating the header for this page:<br/>
+        <blockquote>
+        <i>%s</i> : %s
+        </blockquote>
+        </body></html>''' % sys.exc_info()[0:2])

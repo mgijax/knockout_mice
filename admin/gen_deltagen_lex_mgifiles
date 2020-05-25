@@ -5,6 +5,10 @@
 #
 # Notes: This is a quick & dirty conversion from old code.
 
+import sys
+if '/usr/local/mgi/live/lib/python' not in sys.path:
+        sys.path.insert(0, '/usr/local/mgi/live/lib/python')
+
 import Configuration
 import os
 import pg_db
@@ -13,7 +17,7 @@ import pg_db
 
 localConfig = Configuration.Configuration('../Configuration')
 globalConfig = Configuration.Configuration(
-	os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
+        os.path.join(localConfig['MGICONFIG'], 'web/GlobalConfig'))
 
 ###--- initialize and test database connection ---###
 
@@ -26,14 +30,14 @@ pg_db.set_sqlLogin(user, password, server, database)
 pg_db.useOneConnection(1)
 
 try:
-	results = pg_db.sql('''select value from database_info
-		where name = 'built from mgd database date' ''', 'auto')
+        results = pg_db.sql('''select value from database_info
+                where name = 'built from mgd database date' ''', 'auto')
 except:
-	raise Exception('Cannot read from %s..%s as user %s' % (
-		server, database, user))
+        raise Exception('Cannot read from %s..%s as user %s' % (
+                server, database, user))
 
-print 'Reading from %s..%s (dated %s) as %s' % (server, database,
-	results[0]['value'].split()[0], user)
+print('Reading from %s..%s (dated %s) as %s' % (server, database,
+        results[0]['value'].split()[0], user))
 
 ###--- other global variables ---###
 
@@ -86,9 +90,9 @@ def ga():
     # string with scripts to hit google analytics
 
     return '''
-	<script type="text/javascript" src="%sjs/mgi_ga.js"></script>
-	<script type="text/javascript" src="%sjs/autotrack.js"></script>''' % (
-		webshareUrl, webshareUrl)
+        <script type="text/javascript" src="%sjs/mgi_ga.js"></script>
+        <script type="text/javascript" src="%sjs/autotrack.js"></script>''' % (
+                webshareUrl, webshareUrl)
 
 def makeLexiconFile(companyId):
 
@@ -170,9 +174,9 @@ def main():
     #  generate html files for all Deltagen and Lexicon data
     
     cmd = '''select distinct company_id, holder
-    	from allele
-	where holder is not null
-	order by holder'''
+        from allele
+        where holder is not null
+        order by holder'''
     results = pg_db.sql(cmd,'auto')
     
     for row in results:
@@ -185,7 +189,7 @@ def main():
                 makeDeltagenSumFile(companyId)
                 makeDeltagenMolBioFile(companyId)
 
-    print 'Wrote files for %d alleles' % len(results)
-    print 'Done.'
+    print('Wrote files for %d alleles' % len(results))
+    print('Done.')
 
 main()
