@@ -54,8 +54,7 @@ DELTAGENHOME    = "Deltagen/SummariesHtml"
 DELTAGENMOLBIO  = "Deltagen/MolBioHtml"
 LEXFILELIST = os.path.join(DATASOURCE, "Lexicon/LexiconFileList")
 
-#  URL for wi
-MGI_WI = 'http://%s/' % globalConfig['PY_HOST']
+wiUrl = globalConfig['WI_URL']
 
 # Dictionary for looking up a lexicon HTML file for a given company ID
 lexFiles = {}
@@ -110,7 +109,7 @@ def makeLexiconFile(companyId):
         "<html><head><title> Deltagen/Lexicon Frame</title>%s</head>" % ga(),
         "<frameset id=\"MGIHeaderFrame\" rows=\"185px,*\" border=0>",
         "<frame id=\"MGIHeader\" name=\"MGIHeader\" SRC=\"",
-        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (MGI_WI,dataset,companyId),
+        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (wiUrl,dataset,companyId),
         "\">",
         "<FRAME id=\"treeFrame\" NAME=\"treeFrame\" SRC=\"%s" % srcFile,
         "\">",
@@ -134,7 +133,7 @@ def makeDeltagenSumFile(companyId):
         "<html><head><title> Deltagen/Lexicon Frame</title>%s</head>" % ga(),
         "<frameset id=\"MGIHeaderFrame\" rows=\"185px,*\" border=0>",
         "<frame id=\"MGIHeader\" name=\"MGIHeader\" SRC=\"",
-        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (MGI_WI,dataset,companyId),
+        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (wiUrl,dataset,companyId),
         "\">",
         "<FRAME id=\"treeFrame\" NAME=\"treeFrame\" SRC=\"%s" % srcFile,
         "\">",
@@ -158,7 +157,7 @@ def makeDeltagenMolBioFile(companyId):
         "<html><head><title> Deltagen/Lexicon Frame</title>%s</head>" % ga(),
         "<frameset id=\"MGIHeaderFrame\" rows=\"210px,*\" border=0>",
         "<frame id=\"MGIHeader\" name=\"MGIHeader\" SRC=\"",
-        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (MGI_WI,dataset,companyId),
+        "%sknockout_mice/MGIDeltaLexHeader.cgi?dataset=%s&companyID=%s" % (wiUrl,dataset,companyId),
         "\">",
         "<FRAME id=\"treeFrame\" NAME=\"treeFrame\" SRC=\"%s" % srcFile,
         "\">",
