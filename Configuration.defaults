@@ -2,7 +2,7 @@
 MGICONFIG	/usr/local/mgi/live/mgiconfig/
 
 # path to python interpreter
-PYTHON		/opt/python3.7/bin/python3.7
+PYTHON		/opt/python3.8/bin/python
 
 # unix group for apache-readable files
 GROUP		www
